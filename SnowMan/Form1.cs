@@ -20,38 +20,11 @@ namespace SnowMan
         private PictureBox BackPack;
         private List<ImageItem> itemsList;
         private Timer gameTimer;
-        private int timeLeft = 10; // наприклад, 60 секунд
-        public class Circle
-        {
-            public int x { get; set; }
-            public int y { get; set; }
-            public int diameter { get; set; }
-            public Color fillColor { get; set; }
-            public Color borderColor { get; set; }
-            public bool IsSelected { get; set; }
-            public void Draw(Graphics g)
-            {
-                Brush fill = new SolidBrush(fillColor);
-                Pen border = new Pen(borderColor, IsSelected ? 4 : 2);
+        private int timeLeft = 10; // наприклад, 10 секунд
 
-                g.FillEllipse(fill, x, y, diameter, diameter);
-                g.DrawEllipse(border, x, y, diameter, diameter);
-            }
-            public bool CheckClick(int mx, int my)
-            {
-                int center_x = x + diameter / 2;
-                int center_y = y + diameter / 2;
+        public PictureBox Scene;
+        private SnowHead Hero;
 
-                int distance_x = mx - center_x;
-                int distance_y = my - center_y;
-
-                // (x − a)² + (y − b)² ≤ r²
-                int our_click = distance_x * distance_x + distance_y * distance_y;
-                int our_radius = (diameter / 2) * (diameter / 2);
-
-                return (our_click <= our_radius);
-            }
-        }
         public Form1()
         {
             InitializeComponent();
@@ -61,8 +34,25 @@ namespace SnowMan
             Color border = Color.Black;
             Color fill = Color.White;
 
+            Scene = new PictureBox
+            {
+                Name = "Scene",
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent
+            };
+            this.Controls.Add(Scene);
+
+            Scene.Controls.Add(Winter);
+            Winter.SendToBack();
+
             DrawSnowMan(X, Y, radius, border, fill, 3);
             CreateBackPack();
+
+            Scene.Paint += (s, e) =>
+            {
+                sun?.Sun_draw(e.Graphics);
+                Hero?.head.Draw(e.Graphics);
+            };
         }
 
         private void DrawSnowMan(int start_X, int start_Y, int radius_medium, Color border, Color fill, int n_circles)
@@ -146,7 +136,6 @@ namespace SnowMan
                 RedrawSnowMan();
             }
         }
-
         private void Winter_MouseClick(object sender, MouseEventArgs e)
         {
             foreach (Circle circle in snowMan)
@@ -173,7 +162,6 @@ namespace SnowMan
             db.SubmitChanges(); // зберігаємо ці зміни
             LoadListBox(); // просимо завантажити (бо вже оновлені дані) список елементів в базі
         }
-
         private void listComb_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (listComb.SelectedItem is SaveGoodCombination comb)  // повертає обраний об'єкт
@@ -197,14 +185,13 @@ namespace SnowMan
             BackPack.Cursor = Cursors.Hand;
             BackPack.Click += Backpack_Click;
 
-            this.Controls.Add(BackPack);                    // Додаємо наш рюкзак до форми (Без цього він просто існує в коді, але не відображається)
+            Scene.Controls.Add(BackPack);                    // Додаємо наш рюкзак до сцени (Без цього він просто існує в коді, але не відображається)
 
             // Таймер
             gameTimer = new Timer();
             gameTimer.Interval = 1000; // 1 секунда
             gameTimer.Tick += GameTimer_Tick;
         }
-
         private void GameTimer_Tick(object sender, EventArgs e)
         {
             timeLeft--;
@@ -219,17 +206,27 @@ namespace SnowMan
                 {
                     gameTimer.Stop();
                     MessageBox.Show("All items in correct position!");
+                    StartAnimation();
                     return;
                 }
             }
             if (timeLeft < 0)
             {
                 gameTimer.Stop();
+
+                foreach (var item in itemsList)
+                {
+                    Scene.Controls.Remove(item);
+                    item.Dispose();
+                }
+                itemsList.Clear();
+                itemsList = null;
+                timeLeft = 10;
+                BackPack.Image = Properties.Resources.closed_backpack;
                 MessageBox.Show("Time is up!");
             }
 
         }
-
         private void Backpack_Click(object sender, EventArgs e)
         {
             if (itemsList != null) return; // Щоб не дюпати предмети
@@ -240,19 +237,19 @@ namespace SnowMan
             int diameter = snowMan[0].diameter;
             int x = snowMan[0].x;
             int y = snowMan[0].y;
-       
-            Size bucket_size = new Size(diameter,diameter);
-            ImageItem bucket = new ImageItem("Bucket", Properties.Resources.Bucket,new Point(x,y - diameter/2), bucket_size);
+
+            Size bucket_size = new Size(diameter, diameter);
+            ImageItem bucket = new ImageItem("Bucket", Properties.Resources.Bucket, new Point(x, y - diameter / 2), bucket_size);
             itemsList.Add(bucket);
 
-            Size scarf_size = new Size(diameter,diameter);
+            Size scarf_size = new Size(diameter, diameter);
             ImageItem scarf = new ImageItem("Scarf", Properties.Resources.red_scarf, new Point(x, y + diameter - 15), scarf_size);
             itemsList.Add(scarf);
 
-            Size eye_size = new Size(diameter/5,diameter/5);
-            ImageItem left_eye = new ImageItem("Left eye", Properties.Resources.left_eye, new Point(x+(diameter/4),y+(diameter/2)), eye_size);
+            Size eye_size = new Size(diameter / 5, diameter / 5);
+            ImageItem left_eye = new ImageItem("Left eye", Properties.Resources.left_eye, new Point(x + (diameter / 4), y + (diameter / 2)), eye_size);
             itemsList.Add(left_eye);
-            ImageItem right_eye = new ImageItem("Left eye", Properties.Resources.right_eye, new Point(x+((diameter/4)*3),y+(diameter/2)), eye_size);
+            ImageItem right_eye = new ImageItem("Right eye", Properties.Resources.right_eye, new Point(x + ((diameter / 4) * 3), y + (diameter / 2)), eye_size);
             itemsList.Add(right_eye);
 
             int x_item = BackPack.Location.X + 100;
@@ -262,11 +259,129 @@ namespace SnowMan
             {
                 x_item += diameter;
                 ii.Location = new Point(x_item, y_item);
+                Scene.Controls.Add(ii);
                 ii.BackColor = Color.Transparent;
-                this.Controls.Add(ii);
                 ii.BringToFront();
             }
             gameTimer.Start();
+        }
+
+        private Sun sun;
+        private Label MyText;
+        private Timer animationTimer;
+        private void StartAnimation()
+        {
+            Circle Avatar;
+            sun = new Sun { pos_x = 0, pos_y = 0, sun_width = 0, sun_height = 0 };
+
+            MyText = new Label
+            {
+                Text = "Melting...",
+                Font = new Font("MV Boli", 36, FontStyle.Bold),
+                ForeColor = Color.OrangeRed,
+                BackColor = Color.Transparent,
+                AutoSize = true,
+                Location = new Point(150, 20)
+            };
+            Scene.Controls.Add(MyText);
+
+            Avatar = snowMan[0]; // Використовуємо найменший круг як аватар
+            // Створюємо PictureBox для аватара
+            Bitmap avatarBitmap = new Bitmap(Scene.Width, Scene.Height);
+            using (Graphics g = Graphics.FromImage(avatarBitmap))
+            {
+                int x_p = snowMan[0].x;
+                int y_p = snowMan[0].y;
+
+                Brush fill = new SolidBrush(snowMan[0].fillColor);
+                Pen border = new Pen(snowMan[0].borderColor, 2);
+                g.FillEllipse(fill, x_p, y_p, snowMan[0].diameter, snowMan[0].diameter);
+                g.DrawEllipse(border, x_p, y_p, snowMan[0].diameter, snowMan[0].diameter);
+            }
+            // Scene.Image = avatarBitmap;
+
+            Hero = new SnowHead(Avatar, itemsList[2], itemsList[3]);
+
+            animationTimer = new Timer();
+            animationTimer.Interval = 30; // 30 мс
+            animationTimer.Tick += AnimationTimer_Tick;
+            animationTimer.Start();
+        }
+        private void AnimationTimer_Tick(object sender, EventArgs e)
+        {
+            int speed_fall = 30;
+            Winter.Location = new Point(Winter.Location.X, Winter.Location.Y + speed_fall); // Опускаємо зиму вниз
+            foreach (var item in itemsList)
+            {
+                if (item.ItemName != "Left eye" && item.ItemName != "Right eye")
+                    item.Location = new Point(item.Location.X, item.Location.Y + speed_fall); // Опускаємо предмети вниз
+            }
+
+            sun.Sun_move();
+            Scene.Invalidate(); // Просимо перемалювати сцену
+
+            if (Winter.Location.Y > Scene.Height)
+            {
+                animationTimer.Stop();
+                Scene.Controls.Remove(Winter);
+                MyText.Text = "Run!";
+
+                DinoStartGame();
+
+                return;
+            }
+        }
+        private void DinoStartGame()
+        {
+            Button jump = new Button
+            {
+                Text = "Jump",
+                Font = new Font("Showcard Gothic", 24, FontStyle.Bold),
+                ForeColor = Color.DarkGreen,
+                BackColor = Color.LightYellow,
+                Size = new Size(150, 150),
+                Location = new Point(500, 600)
+            };
+            jump.Click += Jump_Click;
+            Scene.Controls.Add(jump);
+            jump.BringToFront();
+
+            int speed = 5;
+            Timer heroTimer = new Timer();
+            heroTimer.Interval = 30;
+            heroTimer.Tick += (s, e) =>
+            {
+                Hero.Move(speed, 0);
+                Scene.Invalidate();
+            };
+            heroTimer.Start();
+            // щоб було видно, що все працює:
+            MyText.Text = "The head is alive!";
+        }
+
+        private void Jump_Click(object sender, EventArgs e)
+        {
+            int max_height = Hero.head.y - 100;
+            int step = 5;
+            int start_level = Hero.head.y;
+            bool is_jumping = true;
+
+            Timer jumpTimer = new Timer();
+            jumpTimer.Interval = 30;
+            jumpTimer.Tick += (s, ev) =>
+            {
+                if (Hero.head.y >= max_height && is_jumping)
+                    Hero.Jump(step);
+                else if (Hero.head.y < start_level)
+                {
+                    Hero.Fall(step);
+                    is_jumping = false;
+                }
+                else
+                    jumpTimer.Stop();
+
+            };
+            jumpTimer.Start();
         }
     }
 }

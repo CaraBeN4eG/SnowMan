@@ -86,7 +86,7 @@
             // 
             this.changeFill.AutoSize = true;
             this.changeFill.Font = new System.Drawing.Font("Microsoft Sans Serif", 20F);
-            this.changeFill.Location = new System.Drawing.Point(1221, 141);
+            this.changeFill.Location = new System.Drawing.Point(1221, 142);
             this.changeFill.Name = "changeFill";
             this.changeFill.Size = new System.Drawing.Size(300, 46);
             this.changeFill.TabIndex = 2;
@@ -94,7 +94,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(1656, 224);
+            this.button1.Location = new System.Drawing.Point(1656, 225);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(100, 100);
             this.button1.TabIndex = 1;
@@ -116,9 +116,9 @@
             // 
             this.listComb.FormattingEnabled = true;
             this.listComb.ItemHeight = 20;
-            this.listComb.Location = new System.Drawing.Point(1229, 330);
+            this.listComb.Location = new System.Drawing.Point(1228, 329);
             this.listComb.Name = "listComb";
-            this.listComb.Size = new System.Drawing.Size(527, 104);
+            this.listComb.Size = new System.Drawing.Size(528, 104);
             this.listComb.TabIndex = 3;
             this.listComb.SelectedIndexChanged += new System.EventHandler(this.listComb_SelectedIndexChanged);
             // 
@@ -126,7 +126,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1768, 1017);
+            this.ClientSize = new System.Drawing.Size(1794, 1017);
             this.Controls.Add(this.listComb);
             this.Controls.Add(this.AddToDB);
             this.Controls.Add(this.changeFill);

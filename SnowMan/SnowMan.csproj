@@ -64,6 +64,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnimationClasses.cs" />
     <Compile Include="DB.cs">
       <DependentUpon>DB.dbml</DependentUpon>
     </Compile>
