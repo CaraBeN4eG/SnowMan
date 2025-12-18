@@ -16,6 +16,11 @@ namespace SnowMan
         private List<Circle> snowMan;
         private Graphics graphics;
         private Circle selectedCircle = null;
+
+        private PictureBox BackPack;
+        private List<ImageItem> itemsList;
+        private Timer gameTimer;
+        private int timeLeft = 10; // наприклад, 60 секунд
         public class Circle
         {
             public int x { get; set; }
@@ -57,6 +62,7 @@ namespace SnowMan
             Color fill = Color.White;
 
             DrawSnowMan(X, Y, radius, border, fill, 3);
+            CreateBackPack();
         }
 
         private void DrawSnowMan(int start_X, int start_Y, int radius_medium, Color border, Color fill, int n_circles)
@@ -179,6 +185,88 @@ namespace SnowMan
                 selectedCircle.borderColor = border;
             }
             RedrawSnowMan();
+        }
+
+        private void CreateBackPack()
+        {
+            BackPack = new PictureBox();
+            BackPack.Image = Properties.Resources.closed_backpack;
+            BackPack.SizeMode = PictureBoxSizeMode.Zoom;    // зберігає пропорції при зменшенні картинки 
+            BackPack.Size = new Size(150, 200);             // зменшуємо, щоб влазив у форм
+            BackPack.Location = new Point(819, 319);        // Розміщаємо за кординатами
+            BackPack.Cursor = Cursors.Hand;
+            BackPack.Click += Backpack_Click;
+
+            this.Controls.Add(BackPack);                    // Додаємо наш рюкзак до форми (Без цього він просто існує в коді, але не відображається)
+
+            // Таймер
+            gameTimer = new Timer();
+            gameTimer.Interval = 1000; // 1 секунда
+            gameTimer.Tick += GameTimer_Tick;
+        }
+
+        private void GameTimer_Tick(object sender, EventArgs e)
+        {
+            timeLeft--;
+
+            this.Text = $"Snowman building: {timeLeft}s left";
+
+            // Якщо список ще не створено — нічого не перевіряємо
+            if (itemsList != null && itemsList.Count > 0)
+            {
+                bool allFixed = itemsList.All(ii => ii.isFixed);
+                if (allFixed)
+                {
+                    gameTimer.Stop();
+                    MessageBox.Show("All items in correct position!");
+                    return;
+                }
+            }
+            if (timeLeft < 0)
+            {
+                gameTimer.Stop();
+                MessageBox.Show("Time is up!");
+            }
+
+        }
+
+        private void Backpack_Click(object sender, EventArgs e)
+        {
+            if (itemsList != null) return; // Щоб не дюпати предмети
+
+            BackPack.Image = Properties.Resources.opened_backpack;
+            itemsList = new List<ImageItem>();
+
+            int diameter = snowMan[0].diameter;
+            int x = snowMan[0].x;
+            int y = snowMan[0].y;
+       
+            Size bucket_size = new Size(diameter,diameter);
+            ImageItem bucket = new ImageItem("Bucket", Properties.Resources.Bucket,new Point(x,y - diameter/2), bucket_size);
+            itemsList.Add(bucket);
+
+            Size scarf_size = new Size(diameter,diameter);
+            ImageItem scarf = new ImageItem("Scarf", Properties.Resources.red_scarf, new Point(x, y + diameter - 15), scarf_size);
+            itemsList.Add(scarf);
+
+            Size eye_size = new Size(diameter/5,diameter/5);
+            ImageItem left_eye = new ImageItem("Left eye", Properties.Resources.left_eye, new Point(x+(diameter/4),y+(diameter/2)), eye_size);
+            itemsList.Add(left_eye);
+            ImageItem right_eye = new ImageItem("Left eye", Properties.Resources.right_eye, new Point(x+((diameter/4)*3),y+(diameter/2)), eye_size);
+            itemsList.Add(right_eye);
+
+            int x_item = BackPack.Location.X + 100;
+            int y_item = BackPack.Location.Y;
+
+            foreach (ImageItem ii in itemsList)
+            {
+                x_item += diameter;
+                ii.Location = new Point(x_item, y_item);
+                ii.BackColor = Color.Transparent;
+                this.Controls.Add(ii);
+                ii.BringToFront();
+            }
+            gameTimer.Start();
         }
     }
 }
